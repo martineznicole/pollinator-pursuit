@@ -45,9 +45,10 @@ interface PollinatorCardProps {
   type: PollinatorType;
   selected: boolean;
   onClick: () => void;
+  highScore?: number;
 }
 
-export const PollinatorCard = ({ type, selected, onClick }: PollinatorCardProps) => {
+export const PollinatorCard = ({ type, selected, onClick, highScore = 0 }: PollinatorCardProps) => {
   const data = pollinatorData[type];
 
   return (
@@ -71,6 +72,14 @@ export const PollinatorCard = ({ type, selected, onClick }: PollinatorCardProps)
         <p className="text-sm text-muted-foreground text-center leading-relaxed">
           {data.fact}
         </p>
+        
+        {/* High score badge */}
+        {highScore > 0 && (
+          <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-primary/20 text-sm font-semibold text-primary">
+            <span>🏆</span>
+            <span>Best: {highScore}</span>
+          </div>
+        )}
       </div>
       
       {selected && (
