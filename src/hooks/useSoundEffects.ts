@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 
-type SoundType = "pollinate" | "powerup" | "gameStart" | "gameOver" | "warning" | "newHighScore";
+type SoundType = "pollinate" | "powerup" | "gameStart" | "gameOver" | "warning" | "newHighScore" | "obstacle";
 
 export const useSoundEffects = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -91,6 +91,12 @@ export const useSoundEffects = () => {
         setTimeout(() => playTone(1046.5, 0.3, "sine", 0.35), 300); // C6
         setTimeout(() => playTone(783.99, 0.1, "sine", 0.25), 500); // G5
         setTimeout(() => playTone(1046.5, 0.4, "sine", 0.3), 600); // C6
+        break;
+
+      case "obstacle":
+        // Negative buzzer sound
+        playTone(200, 0.15, "sawtooth", 0.25);
+        setTimeout(() => playTone(150, 0.2, "sawtooth", 0.2), 100);
         break;
     }
   }, [playTone, isMuted]);

@@ -6,6 +6,7 @@ import { GameTimer } from "./GameTimer";
 import { ScoreDisplay } from "./ScoreDisplay";
 import { GameOverScreen } from "./GameOverScreen";
 import { PowerUpType, powerUpData } from "./PowerUp";
+import { ObstacleType, obstacleData } from "./Obstacle";
 import { ActivePowerUpDisplay } from "./ActivePowerUpDisplay";
 import { toast } from "sonner";
 import { Pause, Play, Volume2, VolumeX } from "lucide-react";
@@ -29,6 +30,7 @@ export const PollinatorGame = () => {
   const [activePowerUps, setActivePowerUps] = useState<ActivePowerUp[]>([]);
   const [pausedAt, setPausedAt] = useState<number | null>(null);
   const [isTimeFrozen, setIsTimeFrozen] = useState(false);
+  const [isSlowed, setIsSlowed] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [isNewHighScore, setIsNewHighScore] = useState(false);
   const lastWarningTime = useRef<number>(0);
@@ -109,7 +111,6 @@ export const PollinatorGame = () => {
   const handleResume = () => {
     if (pausedAt) {
       const pauseDuration = Date.now() - pausedAt;
-      // Extend power-up end times by pause duration
       setActivePowerUps(prev => prev.map(p => ({
         ...p,
         endTime: p.endTime + pauseDuration,
@@ -152,7 +153,39 @@ export const PollinatorGame = () => {
         endTime: Date.now() + data.duration * 1000,
       }]);
     }
-    // super-nectar is instant, handled in GameArena
+  }, [playSound]);
+
+  const handleObstacleHit = useCallback((type: ObstacleType) => {
+    const data = obstacleData[type];
+    
+    playSound("obstacle");
+    
+    toast(
+      <div className="flex items-center gap-2 text-red-500">
+        <span className="text-2xl">{data.emoji}</span>
+        <div>
+          <p className="font-bold">{data.name}</p>
+          <p className="text-sm opacity-80">{data.effect}</p>
+        </div>
+      </div>,
+      { duration: 2000 }
+    );
+
+    switch (type) {
+      case "wasp":
+        // Steals 2 points
+        setScore(prev => Math.max(0, prev - 2));
+        break;
+      case "spider":
+        // Slows flower spawning for 5 seconds
+        setIsSlowed(true);
+        setTimeout(() => setIsSlowed(false), 5000);
+        break;
+      case "pesticide":
+        // Lose 3 seconds
+        setTimeLeft(prev => Math.max(1, prev - 3));
+        break;
+    }
   }, [playSound]);
 
   const startGame = () => {
@@ -161,6 +194,7 @@ export const PollinatorGame = () => {
     setTimeLeft(GAME_DURATION);
     setActivePowerUps([]);
     setIsTimeFrozen(false);
+    setIsSlowed(false);
     setPausedAt(null);
     setIsNewHighScore(false);
     lastWarningTime.current = 0;
@@ -173,6 +207,7 @@ export const PollinatorGame = () => {
     setTimeLeft(GAME_DURATION);
     setActivePowerUps([]);
     setIsTimeFrozen(false);
+    setIsSlowed(false);
     setPausedAt(null);
     setIsNewHighScore(false);
     lastWarningTime.current = 0;
@@ -240,8 +275,8 @@ export const PollinatorGame = () => {
             </div>
           </section>
 
-          {/* Power-up legend */}
-          <section className="mb-8">
+          {/* Power-up & Obstacle legend */}
+          <section className="mb-8 space-y-4">
             <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 max-w-2xl mx-auto border border-border">
               <h3 className="text-xl font-display font-semibold mb-4 text-center text-foreground">
                 ✨ Power-Ups
@@ -255,6 +290,26 @@ export const PollinatorGame = () => {
                       <div>
                         <p className="font-semibold text-sm">{data.name}</p>
                         <p className="text-xs text-muted-foreground">{data.description}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 max-w-2xl mx-auto border border-destructive/30">
+              <h3 className="text-xl font-display font-semibold mb-4 text-center text-destructive">
+                ⚠️ Obstacles - Avoid These!
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {(["wasp", "spider", "pesticide"] as ObstacleType[]).map((type) => {
+                  const data = obstacleData[type];
+                  return (
+                    <div key={type} className="flex items-center gap-3 p-3 rounded-xl bg-destructive/10">
+                      <span className="text-3xl">{data.emoji}</span>
+                      <div>
+                        <p className="font-semibold text-sm text-destructive">{data.name}</p>
+                        <p className="text-xs text-muted-foreground">{data.effect}</p>
                       </div>
                     </div>
                   );
@@ -338,8 +393,10 @@ export const PollinatorGame = () => {
               pollinator={selectedPollinator}
               onScore={handleScore}
               onPowerUp={handlePowerUp}
+              onObstacleHit={handleObstacleHit}
               isPlaying={gameState === "playing"}
               hasDoublePoints={hasDoublePoints}
+              isSlowed={isSlowed}
             />
             
             {/* Pause overlay */}
@@ -373,7 +430,7 @@ export const PollinatorGame = () => {
 
           {/* Quick tip */}
           <p className="text-center text-muted-foreground mt-4 text-sm">
-            Click flowers to pollinate them! Grab power-ups for bonus effects! ✨
+            Click flowers to pollinate them! Avoid obstacles! ✨
           </p>
         </div>
       </div>
