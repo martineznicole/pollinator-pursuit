@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Flower } from "./Flower";
 import { PollinatorType, pollinatorData } from "./PollinatorCard";
 import { PowerUp, PowerUpType } from "./PowerUp";
+import { Obstacle, ObstacleType } from "./Obstacle";
 
 interface FlowerData {
   id: string;
@@ -17,16 +18,26 @@ interface PowerUpData {
   y: number;
 }
 
+interface ObstacleData {
+  id: string;
+  type: ObstacleType;
+  x: number;
+  y: number;
+}
+
 interface GameArenaProps {
   pollinator: PollinatorType;
   onScore: (points: number) => void;
   onPowerUp: (type: PowerUpType, flowerPositions: { x: number; y: number }[]) => void;
+  onObstacleHit: (type: ObstacleType) => void;
   isPlaying: boolean;
   hasDoublePoints: boolean;
+  isSlowed: boolean;
 }
 
 const colors: FlowerData["color"][] = ["coral", "lavender", "sunflower", "pink", "blue"];
 const powerUpTypes: PowerUpType[] = ["pollen-boost", "time-freeze", "super-nectar"];
+const obstacleTypes: ObstacleType[] = ["wasp", "spider", "pesticide"];
 
 const generateFlower = (): FlowerData => ({
   id: Math.random().toString(36).substr(2, 9),
@@ -42,9 +53,25 @@ const generatePowerUp = (): PowerUpData => ({
   y: 20 + Math.random() * 60,
 });
 
-export const GameArena = ({ pollinator, onScore, onPowerUp, isPlaying, hasDoublePoints }: GameArenaProps) => {
+const generateObstacle = (): ObstacleData => ({
+  id: Math.random().toString(36).substr(2, 9),
+  type: obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)],
+  x: 15 + Math.random() * 70,
+  y: 20 + Math.random() * 60,
+});
+
+export const GameArena = ({ 
+  pollinator, 
+  onScore, 
+  onPowerUp, 
+  onObstacleHit,
+  isPlaying, 
+  hasDoublePoints,
+  isSlowed 
+}: GameArenaProps) => {
   const [flowers, setFlowers] = useState<FlowerData[]>([]);
   const [powerUps, setPowerUps] = useState<PowerUpData[]>([]);
+  const [obstacles, setObstacles] = useState<ObstacleData[]>([]);
   const [cursorPos, setCursorPos] = useState({ x: 50, y: 50 });
 
   // Initialize flowers
@@ -53,6 +80,7 @@ export const GameArena = ({ pollinator, onScore, onPowerUp, isPlaying, hasDouble
       const initialFlowers = Array.from({ length: 5 }, generateFlower);
       setFlowers(initialFlowers);
       setPowerUps([]);
+      setObstacles([]);
     }
   }, [isPlaying]);
 
@@ -60,6 +88,8 @@ export const GameArena = ({ pollinator, onScore, onPowerUp, isPlaying, hasDouble
   useEffect(() => {
     if (!isPlaying) return;
 
+    const spawnRate = isSlowed ? 2500 : 1500;
+    
     const interval = setInterval(() => {
       setFlowers((prev) => {
         if (prev.length < 8) {
@@ -67,17 +97,17 @@ export const GameArena = ({ pollinator, onScore, onPowerUp, isPlaying, hasDouble
         }
         return prev;
       });
-    }, 1500);
+    }, spawnRate);
 
     return () => clearInterval(interval);
-  }, [isPlaying]);
+  }, [isPlaying, isSlowed]);
 
   // Spawn power-ups randomly
   useEffect(() => {
     if (!isPlaying) return;
 
     const spawnPowerUp = () => {
-      if (Math.random() < 0.3) { // 30% chance to spawn
+      if (Math.random() < 0.3) {
         setPowerUps((prev) => {
           if (prev.length < 2) {
             return [...prev, generatePowerUp()];
@@ -88,8 +118,6 @@ export const GameArena = ({ pollinator, onScore, onPowerUp, isPlaying, hasDouble
     };
 
     const interval = setInterval(spawnPowerUp, 5000);
-    
-    // Initial spawn after 3 seconds
     const initialTimeout = setTimeout(spawnPowerUp, 3000);
 
     return () => {
@@ -98,13 +126,48 @@ export const GameArena = ({ pollinator, onScore, onPowerUp, isPlaying, hasDouble
     };
   }, [isPlaying]);
 
+  // Spawn obstacles
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    const spawnObstacle = () => {
+      if (Math.random() < 0.4) { // 40% chance
+        setObstacles((prev) => {
+          if (prev.length < 3) {
+            return [...prev, generateObstacle()];
+          }
+          return prev;
+        });
+      }
+    };
+
+    // First obstacle after 5 seconds
+    const initialTimeout = setTimeout(spawnObstacle, 5000);
+    const interval = setInterval(spawnObstacle, 4000);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
+  }, [isPlaying]);
+
+  // Auto-remove obstacles after some time
+  useEffect(() => {
+    if (!isPlaying || obstacles.length === 0) return;
+
+    const timeout = setTimeout(() => {
+      setObstacles((prev) => prev.slice(1));
+    }, 6000);
+
+    return () => clearTimeout(timeout);
+  }, [isPlaying, obstacles.length]);
+
   const handlePollinate = useCallback(
     (id: string) => {
       setFlowers((prev) => prev.filter((f) => f.id !== id));
       const points = hasDoublePoints ? 2 : 1;
       onScore(points);
       
-      // Add a new flower after a short delay
       setTimeout(() => {
         setFlowers((prev) => [...prev, generateFlower()]);
       }, 500);
@@ -116,11 +179,9 @@ export const GameArena = ({ pollinator, onScore, onPowerUp, isPlaying, hasDouble
     (id: string, type: PowerUpType) => {
       setPowerUps((prev) => prev.filter((p) => p.id !== id));
       
-      // For super nectar, pass flower positions
       const flowerPositions = flowers.map(f => ({ x: f.x, y: f.y }));
       onPowerUp(type, flowerPositions);
       
-      // If super nectar, pollinate nearby flowers (within 30% distance)
       if (type === "super-nectar") {
         const nearbyFlowers = flowers.filter((f) => {
           const dx = f.x - cursorPos.x;
@@ -137,6 +198,14 @@ export const GameArena = ({ pollinator, onScore, onPowerUp, isPlaying, hasDouble
       }
     },
     [onPowerUp, flowers, cursorPos, handlePollinate]
+  );
+
+  const handleObstacleHit = useCallback(
+    (id: string, type: ObstacleType) => {
+      setObstacles((prev) => prev.filter((o) => o.id !== id));
+      onObstacleHit(type);
+    },
+    [onObstacleHit]
   );
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -165,6 +234,13 @@ export const GameArena = ({ pollinator, onScore, onPowerUp, isPlaying, hasDouble
       {hasDoublePoints && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-full font-display font-bold animate-pulse shadow-lg">
           ⚡ 2x POINTS ⚡
+        </div>
+      )}
+
+      {/* Slowed indicator */}
+      {isSlowed && (
+        <div className="absolute top-4 right-4 z-40 bg-gradient-to-r from-gray-600 to-gray-800 text-white px-3 py-1 rounded-full font-display text-sm animate-pulse shadow-lg">
+          🕷️ Slowed!
         </div>
       )}
 
@@ -199,6 +275,15 @@ export const GameArena = ({ pollinator, onScore, onPowerUp, isPlaying, hasDouble
         />
       ))}
 
+      {/* Obstacles */}
+      {obstacles.map((obstacle) => (
+        <Obstacle
+          key={obstacle.id}
+          {...obstacle}
+          onHit={handleObstacleHit}
+        />
+      ))}
+
       {/* Custom cursor - the pollinator */}
       <div
         className="absolute pointer-events-none transform -translate-x-1/2 -translate-y-1/2 text-5xl md:text-6xl transition-transform duration-75 z-50 animate-fly"
@@ -215,6 +300,7 @@ export const GameArena = ({ pollinator, onScore, onPowerUp, isPlaying, hasDouble
         <div className="absolute inset-0 bg-foreground/40 backdrop-blur-sm flex items-center justify-center">
           <div className="text-center text-card p-8 rounded-2xl">
             <p className="text-2xl font-display">Click flowers to pollinate them!</p>
+            <p className="text-lg mt-2 opacity-80">Avoid the obstacles! 🕷️</p>
           </div>
         </div>
       )}
