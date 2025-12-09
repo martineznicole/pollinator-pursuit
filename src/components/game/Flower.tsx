@@ -19,7 +19,7 @@ const flowerColorClasses: Record<FlowerColor, string> = {
   blue: "text-flower-blue",
 };
 
-const flowerEmojis = ["🌸", "🌺", "🌻", "🌷", "🌼", "💐", "🪻", "🌹"];
+const flowerEmojis = ["🌸", "🌺", "🌻", "🌷", "🌼"];
 
 export const Flower = ({ id, x, y, color, onPollinate }: FlowerProps) => {
   const [isPollinated, setIsPollinated] = useState(false);
@@ -43,8 +43,10 @@ export const Flower = ({ id, x, y, color, onPollinate }: FlowerProps) => {
     }, 400);
   };
 
-  const emoji = flowerEmojis[parseInt(id, 36) % flowerEmojis.length];
-  const animationDelay = `${(parseInt(id, 36) % 5) * 0.5}s`;
+  // Use a simple hash to pick an emoji consistently
+  const emojiIndex = Math.abs(id.charCodeAt(0) + id.charCodeAt(1)) % flowerEmojis.length;
+  const emoji = flowerEmojis[emojiIndex];
+  const animationDelay = `${(emojiIndex % 5) * 0.5}s`;
 
   return (
     <div
