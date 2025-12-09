@@ -8,8 +8,9 @@ import { GameOverScreen } from "./GameOverScreen";
 import { PowerUpType, powerUpData } from "./PowerUp";
 import { ActivePowerUpDisplay } from "./ActivePowerUpDisplay";
 import { toast } from "sonner";
+import { Pause, Play } from "lucide-react";
 
-type GameState = "select" | "playing" | "gameover";
+type GameState = "select" | "playing" | "paused" | "gameover";
 
 const GAME_DURATION = 60;
 
@@ -24,6 +25,7 @@ export const PollinatorGame = () => {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
   const [activePowerUps, setActivePowerUps] = useState<ActivePowerUp[]>([]);
+  const [pausedAt, setPausedAt] = useState<number | null>(null);
   const [isTimeFrozen, setIsTimeFrozen] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
 
@@ -73,6 +75,25 @@ export const PollinatorGame = () => {
     return () => clearInterval(timer);
   }, [gameState, timeLeft, isTimeFrozen]);
 
+  // Handle pause/resume for power-ups
+  const handlePause = () => {
+    setPausedAt(Date.now());
+    setGameState("paused");
+  };
+
+  const handleResume = () => {
+    if (pausedAt) {
+      const pauseDuration = Date.now() - pausedAt;
+      // Extend power-up end times by pause duration
+      setActivePowerUps(prev => prev.map(p => ({
+        ...p,
+        endTime: p.endTime + pauseDuration,
+      })));
+    }
+    setPausedAt(null);
+    setGameState("playing");
+  };
+
   const handleScore = useCallback((points: number) => {
     setScore((prev) => prev + points);
   }, []);
@@ -112,6 +133,7 @@ export const PollinatorGame = () => {
     setTimeLeft(GAME_DURATION);
     setActivePowerUps([]);
     setIsTimeFrozen(false);
+    setPausedAt(null);
     setGameState("playing");
   };
 
@@ -120,6 +142,7 @@ export const PollinatorGame = () => {
     setTimeLeft(GAME_DURATION);
     setActivePowerUps([]);
     setIsTimeFrozen(false);
+    setPausedAt(null);
     setGameState("playing");
   };
 
@@ -225,26 +248,70 @@ export const PollinatorGame = () => {
     );
   }
 
-  // Playing screen
-  if (gameState === "playing" && selectedPollinator) {
+  // Playing or paused screen
+  if ((gameState === "playing" || gameState === "paused") && selectedPollinator) {
     return (
       <div className="min-h-screen p-4 bg-gradient-to-b from-background to-secondary">
         <div className="max-w-5xl mx-auto">
           {/* Game HUD */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
             <ScoreDisplay score={score} />
-            <ActivePowerUpDisplay activePowerUps={activePowerUps} currentTime={currentTime} />
-            <GameTimer timeLeft={timeLeft} isFrozen={isTimeFrozen} />
+            <div className="flex items-center gap-4">
+              <ActivePowerUpDisplay activePowerUps={activePowerUps} currentTime={currentTime} />
+              <Button
+                onClick={gameState === "paused" ? handleResume : handlePause}
+                variant="outline"
+                size="icon"
+                className="rounded-full h-12 w-12"
+              >
+                {gameState === "paused" ? (
+                  <Play className="h-5 w-5" />
+                ) : (
+                  <Pause className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
+            <GameTimer timeLeft={timeLeft} isFrozen={isTimeFrozen || gameState === "paused"} />
           </div>
 
           {/* Game Arena */}
-          <GameArena
-            pollinator={selectedPollinator}
-            onScore={handleScore}
-            onPowerUp={handlePowerUp}
-            isPlaying={gameState === "playing"}
-            hasDoublePoints={hasDoublePoints}
-          />
+          <div className="relative">
+            <GameArena
+              pollinator={selectedPollinator}
+              onScore={handleScore}
+              onPowerUp={handlePowerUp}
+              isPlaying={gameState === "playing"}
+              hasDoublePoints={hasDoublePoints}
+            />
+            
+            {/* Pause overlay */}
+            {gameState === "paused" && (
+              <div className="absolute inset-0 bg-foreground/60 backdrop-blur-sm rounded-3xl flex items-center justify-center z-50">
+                <div className="text-center space-y-6">
+                  <div className="text-6xl">⏸️</div>
+                  <h2 className="text-3xl font-display font-bold text-card">Game Paused</h2>
+                  <div className="flex gap-4">
+                    <Button
+                      onClick={handleResume}
+                      size="lg"
+                      className="text-lg font-display h-14 px-8 rounded-xl"
+                    >
+                      <Play className="mr-2 h-5 w-5" />
+                      Resume
+                    </Button>
+                    <Button
+                      onClick={chooseNewPollinator}
+                      variant="outline"
+                      size="lg"
+                      className="text-lg font-display h-14 px-8 rounded-xl bg-card/90"
+                    >
+                      Quit
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Quick tip */}
           <p className="text-center text-muted-foreground mt-4 text-sm">
