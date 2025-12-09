@@ -13,6 +13,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        display: ['Fredoka', 'sans-serif'],
+        body: ['Nunito', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -57,6 +61,24 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Game-specific colors
+        flower: {
+          coral: "hsl(var(--flower-coral))",
+          lavender: "hsl(var(--flower-lavender))",
+          sunflower: "hsl(var(--flower-sunflower))",
+          pink: "hsl(var(--flower-pink))",
+          blue: "hsl(var(--flower-blue))",
+        },
+        meadow: {
+          light: "hsl(var(--meadow-light))",
+          dark: "hsl(var(--meadow-dark))",
+        },
+        pollinator: {
+          butterfly: "hsl(var(--butterfly))",
+          beetle: "hsl(var(--beetle))",
+          bumblebee: "hsl(var(--bumblebee))",
+          bat: "hsl(var(--bat))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -65,20 +87,12 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
