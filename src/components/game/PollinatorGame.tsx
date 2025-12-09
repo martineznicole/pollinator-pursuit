@@ -66,7 +66,18 @@ export const PollinatorGame = () => {
     });
   }, [currentTime]);
 
-  // Timer logic with warning sound
+  // Timer countdown
+  useEffect(() => {
+    if (gameState !== "playing" || isTimeFrozen) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => Math.max(0, prev - 1));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [gameState, isTimeFrozen]);
+
+  // Game over check and warning sounds
   useEffect(() => {
     if (gameState !== "playing") return;
 
@@ -74,7 +85,6 @@ export const PollinatorGame = () => {
       setGameState("gameover");
       playSound("gameOver");
       
-      // Check for high score
       if (selectedPollinator) {
         const isNew = updateHighScore(selectedPollinator, score);
         setIsNewHighScore(isNew);
@@ -92,15 +102,7 @@ export const PollinatorGame = () => {
         playSound("warning");
       }
     }
-
-    if (isTimeFrozen) return;
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [gameState, timeLeft, isTimeFrozen, playSound, selectedPollinator, score, updateHighScore]);
+  }, [gameState, timeLeft, playSound, selectedPollinator, score, updateHighScore]);
 
   // Handle pause/resume for power-ups
   const handlePause = () => {
