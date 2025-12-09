@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Flower } from "./Flower";
 import { PollinatorType, pollinatorData } from "./PollinatorCard";
+import { PowerUp, PowerUpType } from "./PowerUp";
 
 interface FlowerData {
   id: string;
@@ -9,13 +10,23 @@ interface FlowerData {
   color: "coral" | "lavender" | "sunflower" | "pink" | "blue";
 }
 
+interface PowerUpData {
+  id: string;
+  type: PowerUpType;
+  x: number;
+  y: number;
+}
+
 interface GameArenaProps {
   pollinator: PollinatorType;
-  onScore: () => void;
+  onScore: (points: number) => void;
+  onPowerUp: (type: PowerUpType, flowerPositions: { x: number; y: number }[]) => void;
   isPlaying: boolean;
+  hasDoublePoints: boolean;
 }
 
 const colors: FlowerData["color"][] = ["coral", "lavender", "sunflower", "pink", "blue"];
+const powerUpTypes: PowerUpType[] = ["pollen-boost", "time-freeze", "super-nectar"];
 
 const generateFlower = (): FlowerData => ({
   id: Math.random().toString(36).substr(2, 9),
@@ -24,8 +35,16 @@ const generateFlower = (): FlowerData => ({
   color: colors[Math.floor(Math.random() * colors.length)],
 });
 
-export const GameArena = ({ pollinator, onScore, isPlaying }: GameArenaProps) => {
+const generatePowerUp = (): PowerUpData => ({
+  id: Math.random().toString(36).substr(2, 9),
+  type: powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)],
+  x: 15 + Math.random() * 70,
+  y: 20 + Math.random() * 60,
+});
+
+export const GameArena = ({ pollinator, onScore, onPowerUp, isPlaying, hasDoublePoints }: GameArenaProps) => {
   const [flowers, setFlowers] = useState<FlowerData[]>([]);
+  const [powerUps, setPowerUps] = useState<PowerUpData[]>([]);
   const [cursorPos, setCursorPos] = useState({ x: 50, y: 50 });
 
   // Initialize flowers
@@ -33,6 +52,7 @@ export const GameArena = ({ pollinator, onScore, isPlaying }: GameArenaProps) =>
     if (isPlaying) {
       const initialFlowers = Array.from({ length: 5 }, generateFlower);
       setFlowers(initialFlowers);
+      setPowerUps([]);
     }
   }, [isPlaying]);
 
@@ -52,17 +72,71 @@ export const GameArena = ({ pollinator, onScore, isPlaying }: GameArenaProps) =>
     return () => clearInterval(interval);
   }, [isPlaying]);
 
+  // Spawn power-ups randomly
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    const spawnPowerUp = () => {
+      if (Math.random() < 0.3) { // 30% chance to spawn
+        setPowerUps((prev) => {
+          if (prev.length < 2) {
+            return [...prev, generatePowerUp()];
+          }
+          return prev;
+        });
+      }
+    };
+
+    const interval = setInterval(spawnPowerUp, 5000);
+    
+    // Initial spawn after 3 seconds
+    const initialTimeout = setTimeout(spawnPowerUp, 3000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(initialTimeout);
+    };
+  }, [isPlaying]);
+
   const handlePollinate = useCallback(
     (id: string) => {
       setFlowers((prev) => prev.filter((f) => f.id !== id));
-      onScore();
+      const points = hasDoublePoints ? 2 : 1;
+      onScore(points);
       
       // Add a new flower after a short delay
       setTimeout(() => {
         setFlowers((prev) => [...prev, generateFlower()]);
       }, 500);
     },
-    [onScore]
+    [onScore, hasDoublePoints]
+  );
+
+  const handlePowerUpCollect = useCallback(
+    (id: string, type: PowerUpType) => {
+      setPowerUps((prev) => prev.filter((p) => p.id !== id));
+      
+      // For super nectar, pass flower positions
+      const flowerPositions = flowers.map(f => ({ x: f.x, y: f.y }));
+      onPowerUp(type, flowerPositions);
+      
+      // If super nectar, pollinate nearby flowers (within 30% distance)
+      if (type === "super-nectar") {
+        const nearbyFlowers = flowers.filter((f) => {
+          const dx = f.x - cursorPos.x;
+          const dy = f.y - cursorPos.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          return distance < 30;
+        });
+        
+        nearbyFlowers.forEach((f, i) => {
+          setTimeout(() => {
+            handlePollinate(f.id);
+          }, i * 100);
+        });
+      }
+    },
+    [onPowerUp, flowers, cursorPos, handlePollinate]
   );
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -87,6 +161,13 @@ export const GameArena = ({ pollinator, onScore, isPlaying }: GameArenaProps) =>
         <div className="absolute top-5 right-10 text-5xl opacity-30">☀️</div>
       </div>
 
+      {/* Double points indicator */}
+      {hasDoublePoints && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-2 rounded-full font-display font-bold animate-pulse shadow-lg">
+          ⚡ 2x POINTS ⚡
+        </div>
+      )}
+
       {/* Grass at bottom */}
       <div className="absolute bottom-0 left-0 right-0 h-16 flex items-end justify-around overflow-hidden">
         {Array.from({ length: 20 }).map((_, i) => (
@@ -106,6 +187,15 @@ export const GameArena = ({ pollinator, onScore, isPlaying }: GameArenaProps) =>
           key={flower.id}
           {...flower}
           onPollinate={handlePollinate}
+        />
+      ))}
+
+      {/* Power-ups */}
+      {powerUps.map((powerUp) => (
+        <PowerUp
+          key={powerUp.id}
+          {...powerUp}
+          onCollect={handlePowerUpCollect}
         />
       ))}
 
