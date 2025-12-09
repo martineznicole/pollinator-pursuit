@@ -6,14 +6,17 @@ interface GameOverScreenProps {
   pollinator: PollinatorType;
   onPlayAgain: () => void;
   onChooseNew: () => void;
+  isNewHighScore: boolean;
+  highScore: number;
 }
 
-const getScoreMessage = (score: number): { title: string; emoji: string } => {
-  if (score >= 30) return { title: "Legendary Pollinator!", emoji: "🏆" };
-  if (score >= 20) return { title: "Expert Pollinator!", emoji: "🌟" };
-  if (score >= 10) return { title: "Great Job!", emoji: "🎉" };
-  if (score >= 5) return { title: "Good Start!", emoji: "👍" };
-  return { title: "Keep Practicing!", emoji: "💪" };
+const getScoreMessage = (score: number, isNewHighScore: boolean): { title: string; emoji: string } => {
+  if (isNewHighScore) return { title: "New High Score!", emoji: "🏆" };
+  if (score >= 20) return { title: "Amazing!", emoji: "🌟" };
+  if (score >= 15) return { title: "Great Job!", emoji: "🎉" };
+  if (score >= 10) return { title: "Well Done!", emoji: "👍" };
+  if (score >= 5) return { title: "Good Start!", emoji: "💪" };
+  return { title: "Keep Practicing!", emoji: "🌱" };
 };
 
 export const GameOverScreen = ({
@@ -21,8 +24,10 @@ export const GameOverScreen = ({
   pollinator,
   onPlayAgain,
   onChooseNew,
+  isNewHighScore,
+  highScore,
 }: GameOverScreenProps) => {
-  const { title, emoji } = getScoreMessage(score);
+  const { title, emoji } = getScoreMessage(score, isNewHighScore);
   const data = pollinatorData[pollinator];
 
   return (
@@ -36,15 +41,30 @@ export const GameOverScreen = ({
             {title}
           </h2>
           
+          {isNewHighScore && (
+            <div className="mb-4 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full font-display animate-pulse">
+              <span>🎊</span>
+              <span>NEW RECORD!</span>
+              <span>🎊</span>
+            </div>
+          )}
+          
           <div className="flex items-center justify-center gap-2 mb-6">
             <span className="text-5xl">{data.emoji}</span>
             <span className="text-muted-foreground">as a {data.name}</span>
           </div>
 
-          <div className="bg-primary/10 rounded-2xl p-6 mb-6">
+          <div className="bg-primary/10 rounded-2xl p-6 mb-4">
             <p className="text-muted-foreground mb-2">Flowers Pollinated</p>
             <p className="text-6xl font-display font-bold text-primary">{score}</p>
           </div>
+
+          {!isNewHighScore && highScore > 0 && (
+            <div className="mb-4 text-muted-foreground">
+              <span>🏆 Your best: </span>
+              <span className="font-bold text-foreground">{highScore}</span>
+            </div>
+          )}
 
           <div className="bg-muted rounded-xl p-4 text-sm text-muted-foreground">
             <p className="font-semibold mb-1">🌱 Did you know?</p>

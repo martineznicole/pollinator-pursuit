@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { PollinatorCard, PollinatorType } from "./PollinatorCard";
 import { GameArena } from "./GameArena";
@@ -8,7 +8,9 @@ import { GameOverScreen } from "./GameOverScreen";
 import { PowerUpType, powerUpData } from "./PowerUp";
 import { ActivePowerUpDisplay } from "./ActivePowerUpDisplay";
 import { toast } from "sonner";
-import { Pause, Play } from "lucide-react";
+import { Pause, Play, Volume2, VolumeX } from "lucide-react";
+import { useHighScores } from "@/hooks/useHighScores";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 type GameState = "select" | "playing" | "paused" | "gameover";
 
@@ -28,6 +30,11 @@ export const PollinatorGame = () => {
   const [pausedAt, setPausedAt] = useState<number | null>(null);
   const [isTimeFrozen, setIsTimeFrozen] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [isNewHighScore, setIsNewHighScore] = useState(false);
+  const lastWarningTime = useRef<number>(0);
+
+  const { highScores, updateHighScore, getHighScore } = useHighScores();
+  const { playSound, isMuted, toggleMute } = useSoundEffects();
 
   // Check if double points is active
   const hasDoublePoints = activePowerUps.some(p => p.type === "pollen-boost");
@@ -57,13 +64,31 @@ export const PollinatorGame = () => {
     });
   }, [currentTime]);
 
-  // Timer logic
+  // Timer logic with warning sound
   useEffect(() => {
     if (gameState !== "playing") return;
 
     if (timeLeft <= 0) {
       setGameState("gameover");
+      playSound("gameOver");
+      
+      // Check for high score
+      if (selectedPollinator) {
+        const isNew = updateHighScore(selectedPollinator, score);
+        setIsNewHighScore(isNew);
+        if (isNew) {
+          setTimeout(() => playSound("newHighScore"), 500);
+        }
+      }
       return;
+    }
+
+    // Play warning sound at 10, 5, 4, 3, 2, 1
+    if (timeLeft <= 10 && timeLeft !== lastWarningTime.current) {
+      lastWarningTime.current = timeLeft;
+      if (timeLeft <= 5 || timeLeft === 10) {
+        playSound("warning");
+      }
     }
 
     if (isTimeFrozen) return;
@@ -73,7 +98,7 @@ export const PollinatorGame = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [gameState, timeLeft, isTimeFrozen]);
+  }, [gameState, timeLeft, isTimeFrozen, playSound, selectedPollinator, score, updateHighScore]);
 
   // Handle pause/resume for power-ups
   const handlePause = () => {
@@ -96,10 +121,13 @@ export const PollinatorGame = () => {
 
   const handleScore = useCallback((points: number) => {
     setScore((prev) => prev + points);
-  }, []);
+    playSound("pollinate");
+  }, [playSound]);
 
   const handlePowerUp = useCallback((type: PowerUpType, _flowerPositions: { x: number; y: number }[]) => {
     const data = powerUpData[type];
+    
+    playSound("powerup");
     
     toast(
       <div className="flex items-center gap-2">
@@ -125,7 +153,7 @@ export const PollinatorGame = () => {
       }]);
     }
     // super-nectar is instant, handled in GameArena
-  }, []);
+  }, [playSound]);
 
   const startGame = () => {
     if (!selectedPollinator) return;
@@ -134,7 +162,10 @@ export const PollinatorGame = () => {
     setActivePowerUps([]);
     setIsTimeFrozen(false);
     setPausedAt(null);
+    setIsNewHighScore(false);
+    lastWarningTime.current = 0;
     setGameState("playing");
+    playSound("gameStart");
   };
 
   const playAgain = () => {
@@ -143,7 +174,10 @@ export const PollinatorGame = () => {
     setActivePowerUps([]);
     setIsTimeFrozen(false);
     setPausedAt(null);
+    setIsNewHighScore(false);
+    lastWarningTime.current = 0;
     setGameState("playing");
+    playSound("gameStart");
   };
 
   const chooseNewPollinator = () => {
@@ -151,13 +185,33 @@ export const PollinatorGame = () => {
     setGameState("select");
   };
 
+  // Mute button component
+  const MuteButton = () => (
+    <Button
+      onClick={toggleMute}
+      variant="outline"
+      size="icon"
+      className="rounded-full h-10 w-10"
+      title={isMuted ? "Unmute" : "Mute"}
+    >
+      {isMuted ? (
+        <VolumeX className="h-4 w-4" />
+      ) : (
+        <Volume2 className="h-4 w-4" />
+      )}
+    </Button>
+  );
+
   // Selection screen
   if (gameState === "select") {
     return (
       <div className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-background via-background to-secondary">
         <div className="max-w-5xl mx-auto">
-          {/* Header */}
-          <header className="text-center mb-8 md:mb-12">
+          {/* Header with mute button */}
+          <header className="text-center mb-8 md:mb-12 relative">
+            <div className="absolute right-0 top-0">
+              <MuteButton />
+            </div>
             <h1 className="text-4xl md:text-6xl font-display font-bold text-foreground mb-4">
               🌸 Pollinator Party 🐝
             </h1>
@@ -179,6 +233,7 @@ export const PollinatorGame = () => {
                     type={type}
                     selected={selectedPollinator === type}
                     onClick={() => setSelectedPollinator(type)}
+                    highScore={highScores[type]}
                   />
                 )
               )}
@@ -244,6 +299,8 @@ export const PollinatorGame = () => {
         pollinator={selectedPollinator}
         onPlayAgain={playAgain}
         onChooseNew={chooseNewPollinator}
+        isNewHighScore={isNewHighScore}
+        highScore={getHighScore(selectedPollinator)}
       />
     );
   }
@@ -256,8 +313,9 @@ export const PollinatorGame = () => {
           {/* Game HUD */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
             <ScoreDisplay score={score} />
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <ActivePowerUpDisplay activePowerUps={activePowerUps} currentTime={currentTime} />
+              <MuteButton />
               <Button
                 onClick={gameState === "paused" ? handleResume : handlePause}
                 variant="outline"
