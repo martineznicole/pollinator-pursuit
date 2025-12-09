@@ -44,39 +44,53 @@ export const Flower = ({ id, x, y, color, onPollinate }: FlowerProps) => {
   };
 
   const emoji = flowerEmojis[parseInt(id, 36) % flowerEmojis.length];
+  const animationDelay = `${(parseInt(id, 36) % 5) * 0.5}s`;
 
   return (
-    <button
-      onClick={handleClick}
-      disabled={isPollinated}
-      className={cn(
-        "absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300",
-        "text-5xl md:text-6xl cursor-pointer hover:scale-125 active:scale-95",
-        "animate-float",
-        flowerColorClasses[color],
-        isPollinated && "opacity-0 scale-150"
-      )}
+    <div
+      className="absolute"
       style={{
         left: `${x}%`,
         top: `${y}%`,
-        animationDelay: `${Math.random() * 2}s`,
       }}
     >
-      {emoji}
-      
-      {/* Sparkle effects */}
-      {sparkles.map((sparkle) => (
-        <span
-          key={sparkle.id}
-          className="absolute animate-sparkle text-2xl pointer-events-none"
-          style={{
-            left: `${sparkle.x}px`,
-            top: `${sparkle.y}px`,
-          }}
+      {/* Float animation wrapper - separated from button */}
+      <div 
+        className={cn(
+          "animate-float",
+          isPollinated && "animate-none"
+        )}
+        style={{ animationDelay }}
+      >
+        <button
+          onClick={handleClick}
+          disabled={isPollinated}
+          className={cn(
+            "relative transform -translate-x-1/2 -translate-y-1/2",
+            "text-5xl md:text-6xl cursor-pointer",
+            "transition-[transform,opacity] duration-200 ease-out",
+            "hover:scale-110 active:scale-95",
+            flowerColorClasses[color],
+            isPollinated && "opacity-0 scale-150 pointer-events-none"
+          )}
         >
-          ✨
-        </span>
-      ))}
-    </button>
+          {emoji}
+          
+          {/* Sparkle effects */}
+          {sparkles.map((sparkle) => (
+            <span
+              key={sparkle.id}
+              className="absolute animate-sparkle text-2xl pointer-events-none"
+              style={{
+                left: `${sparkle.x}px`,
+                top: `${sparkle.y}px`,
+              }}
+            >
+              ✨
+            </span>
+          ))}
+        </button>
+      </div>
+    </div>
   );
 };
