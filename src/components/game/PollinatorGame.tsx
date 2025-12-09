@@ -12,7 +12,7 @@ import { Pause, Play } from "lucide-react";
 
 type GameState = "select" | "playing" | "paused" | "gameover";
 
-const GAME_DURATION = 60;
+const GAME_DURATION = 30;
 
 interface ActivePowerUp {
   type: PowerUpType;
@@ -162,7 +162,7 @@ export const PollinatorGame = () => {
               🌸 Pollinator Party 🐝
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Choose your pollinator and help flowers bloom! Pollinate as many flowers as you can in 60 seconds.
+              Choose your pollinator and help flowers bloom! Pollinate as many flowers as you can in 30 seconds.
             </p>
           </header>
 

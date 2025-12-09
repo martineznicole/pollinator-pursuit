@@ -7,7 +7,7 @@ interface GameTimerProps {
 
 export const GameTimer = ({ timeLeft, isFrozen = false }: GameTimerProps) => {
   const isLow = timeLeft <= 10;
-  const progress = (timeLeft / 60) * 100;
+  const progress = (timeLeft / 30) * 100;
 
   return (
     <div className="flex flex-col items-center gap-2">
