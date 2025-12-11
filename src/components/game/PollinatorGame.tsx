@@ -13,9 +13,10 @@ import { Pause, Play, Volume2, VolumeX } from "lucide-react";
 import { useHighScores } from "@/hooks/useHighScores";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 
-type GameState = "select" | "playing" | "paused" | "gameover";
+type GameState = "select" | "countdown" | "playing" | "paused" | "gameover";
 
 const GAME_DURATION = 30;
+const COUNTDOWN_DURATION = 3;
 
 interface ActivePowerUp {
   type: PowerUpType;
@@ -33,6 +34,7 @@ export const PollinatorGame = () => {
   const [isSlowed, setIsSlowed] = useState(false);
   const [currentTime, setCurrentTime] = useState(Date.now());
   const [isNewHighScore, setIsNewHighScore] = useState(false);
+  const [countdown, setCountdown] = useState(COUNTDOWN_DURATION);
   const lastWarningTime = useRef<number>(0);
 
   const { highScores, updateHighScore, getHighScore } = useHighScores();
@@ -65,6 +67,23 @@ export const PollinatorGame = () => {
       return updated;
     });
   }, [currentTime]);
+
+  // Countdown before game starts
+  useEffect(() => {
+    if (gameState !== "countdown") return;
+
+    if (countdown <= 0) {
+      setGameState("playing");
+      playSound("gameStart");
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [gameState, countdown, playSound]);
 
   // Timer countdown
   useEffect(() => {
@@ -200,8 +219,8 @@ export const PollinatorGame = () => {
     setPausedAt(null);
     setIsNewHighScore(false);
     lastWarningTime.current = 0;
-    setGameState("playing");
-    playSound("gameStart");
+    setCountdown(COUNTDOWN_DURATION);
+    setGameState("countdown");
   };
 
   const playAgain = () => {
@@ -213,8 +232,8 @@ export const PollinatorGame = () => {
     setPausedAt(null);
     setIsNewHighScore(false);
     lastWarningTime.current = 0;
-    setGameState("playing");
-    playSound("gameStart");
+    setCountdown(COUNTDOWN_DURATION);
+    setGameState("countdown");
   };
 
   const chooseNewPollinator = () => {
@@ -343,6 +362,24 @@ export const PollinatorGame = () => {
               🎮 Start Game
             </Button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Countdown screen
+  if (gameState === "countdown" && selectedPollinator) {
+    const pollinatorEmoji = selectedPollinator === "butterfly" ? "🦋" : 
+                            selectedPollinator === "beetle" ? "🪲" : 
+                            selectedPollinator === "bumblebee" ? "🐝" : "🦇";
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-secondary">
+        <div className="text-center">
+          <div className="text-8xl mb-8 animate-bounce">{pollinatorEmoji}</div>
+          <div className="text-9xl font-display font-bold text-primary animate-scale-in">
+            {countdown > 0 ? countdown : "GO!"}
+          </div>
+          <p className="text-2xl text-muted-foreground mt-6">Get ready to pollinate!</p>
         </div>
       </div>
     );
