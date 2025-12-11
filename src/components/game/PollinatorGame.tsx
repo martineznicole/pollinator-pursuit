@@ -310,7 +310,7 @@ export const PollinatorGame = () => {
                     <div key={type} className="flex items-center gap-3 p-3 rounded-xl bg-destructive/10">
                       <span className="text-3xl">{data.emoji}</span>
                       <div>
-                        <p className="font-semibold text-sm text-destructive">{data.name}</p>
+                        <p className="font-semibold text-sm text-white">{data.name}</p>
                         <p className="text-xs text-muted-foreground">{data.effect}</p>
                       </div>
                     </div>
