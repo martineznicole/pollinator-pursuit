@@ -343,44 +343,46 @@ export const PollinatorGame = () => {
           </section>
 
           {/* Power-up & Obstacle legend */}
-          <section className="mb-8 space-y-4">
-            <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 max-w-2xl mx-auto border border-border">
-              <h3 className="text-xl font-display font-semibold mb-4 text-center text-foreground">
-                ✨ Power-Ups
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {(["pollen-boost", "time-freeze", "super-nectar"] as PowerUpType[]).map((type) => {
-                  const data = powerUpData[type];
-                  return (
-                    <div key={type} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
-                      <span className="text-3xl">{data.emoji}</span>
-                      <div>
-                        <p className="font-semibold text-sm">{data.name}</p>
-                        <p className="text-xs text-muted-foreground">{data.description}</p>
+          <section className="mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+              <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 border border-border">
+                <h3 className="text-xl font-display font-semibold mb-4 text-center text-foreground">
+                  ✨ Power-Ups
+                </h3>
+                <div className="space-y-3">
+                  {(["pollen-boost", "time-freeze", "super-nectar"] as PowerUpType[]).map((type) => {
+                    const data = powerUpData[type];
+                    return (
+                      <div key={type} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50">
+                        <span className="text-3xl">{data.emoji}</span>
+                        <div>
+                          <p className="font-semibold text-sm">{data.name}</p>
+                          <p className="text-xs text-muted-foreground">{data.description}</p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            <div className="bg-destructive/80 backdrop-blur-sm rounded-2xl p-6 max-w-2xl mx-auto border border-destructive">
-              <h3 className="text-xl font-display font-semibold mb-4 text-center text-white">
-                ⚠️ Obstacles - Avoid These!
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {(["wasp", "spider", "pesticide"] as ObstacleType[]).map((type) => {
-                  const data = obstacleData[type];
-                  return (
-                    <div key={type} className="flex items-center gap-3 p-3 rounded-xl bg-destructive/10">
-                      <span className="text-3xl">{data.emoji}</span>
-                      <div>
-                        <p className="font-semibold text-sm text-white">{data.name}</p>
-                        <p className="text-xs text-black">{data.effect}</p>
+              <div className="bg-destructive/80 backdrop-blur-sm rounded-2xl p-6 border border-destructive">
+                <h3 className="text-xl font-display font-semibold mb-4 text-center text-white">
+                  ⚠️ Obstacles - Avoid These!
+                </h3>
+                <div className="space-y-3">
+                  {(["wasp", "spider", "pesticide"] as ObstacleType[]).map((type) => {
+                    const data = obstacleData[type];
+                    return (
+                      <div key={type} className="flex items-center gap-3 p-3 rounded-xl bg-destructive/10">
+                        <span className="text-3xl">{data.emoji}</span>
+                        <div>
+                          <p className="font-semibold text-sm text-white">{data.name}</p>
+                          <p className="text-xs text-black">{data.effect}</p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </section>
