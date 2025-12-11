@@ -35,7 +35,7 @@ export const pollinatorData: Record<PollinatorType, PollinatorInfo> = {
   bat: {
     name: "Bat",
     emoji: "🦇",
-    fact: "Bats pollinate over 500 plant species including bananas, mangoes, and agave used for tequila!",
+    fact: "Bats are nocturnal pollinators for over 500 plant species including bananas, mangoes, and agave used for tequila!",
     color: "text-pollinator-bat",
     bgGradient: "from-purple-900/20 to-indigo-700/20",
   },
