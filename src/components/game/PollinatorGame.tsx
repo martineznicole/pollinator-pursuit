@@ -257,6 +257,18 @@ export const PollinatorGame = () => {
             </p>
           </header>
 
+          {/* Educational section */}
+          <section className="mb-8">
+            <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 max-w-2xl mx-auto border border-border">
+              <h3 className="text-xl font-display font-semibold mb-3 text-foreground">
+                🌍 Why Pollinators Matter
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Pollinators are essential for our food supply! They help pollinate about 75% of flowering plants and nearly 75% of crops. Without bees, butterflies, beetles, and bats, we wouldn't have apples, almonds, chocolate, or countless other foods we enjoy.
+              </p>
+            </div>
+          </section>
+
           {/* Pollinator selection */}
           <section className="mb-8">
             <h2 className="text-2xl font-display font-semibold text-center mb-6 text-foreground">
@@ -331,18 +343,6 @@ export const PollinatorGame = () => {
               🎮 Start Game
             </Button>
           </div>
-
-          {/* Educational footer */}
-          <footer className="mt-12 text-center">
-            <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 max-w-2xl mx-auto border border-border">
-              <h3 className="text-xl font-display font-semibold mb-3 text-foreground">
-                🌍 Why Pollinators Matter
-              </h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Pollinators are essential for our food supply! They help pollinate about 75% of flowering plants and nearly 75% of crops. Without bees, butterflies, beetles, and bats, we wouldn't have apples, almonds, chocolate, or countless other foods we enjoy.
-              </p>
-            </div>
-          </footer>
         </div>
       </div>
     );
