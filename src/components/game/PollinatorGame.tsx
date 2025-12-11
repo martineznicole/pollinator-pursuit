@@ -14,9 +14,15 @@ import { useHighScores } from "@/hooks/useHighScores";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 
 type GameState = "select" | "countdown" | "playing" | "paused" | "gameover";
+type Difficulty = "easy" | "normal" | "hard";
 
-const GAME_DURATION = 30;
 const COUNTDOWN_DURATION = 3;
+
+const difficultySettings: Record<Difficulty, { duration: number; obstacleRate: number; label: string; emoji: string; description: string }> = {
+  easy: { duration: 30, obstacleRate: 0, label: "Easy", emoji: "🌱", description: "30 seconds, no obstacles" },
+  normal: { duration: 25, obstacleRate: 0.4, label: "Normal", emoji: "🌿", description: "25 seconds, with obstacles" },
+  hard: { duration: 20, obstacleRate: 0.6, label: "Hard", emoji: "🔥", description: "20 seconds, more obstacles" },
+};
 
 interface ActivePowerUp {
   type: PowerUpType;
@@ -26,8 +32,9 @@ interface ActivePowerUp {
 export const PollinatorGame = () => {
   const [gameState, setGameState] = useState<GameState>("select");
   const [selectedPollinator, setSelectedPollinator] = useState<PollinatorType | null>(null);
+  const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
+  const [timeLeft, setTimeLeft] = useState(difficultySettings.normal.duration);
   const [activePowerUps, setActivePowerUps] = useState<ActivePowerUp[]>([]);
   const [pausedAt, setPausedAt] = useState<number | null>(null);
   const [isTimeFrozen, setIsTimeFrozen] = useState(false);
@@ -212,7 +219,7 @@ export const PollinatorGame = () => {
   const startGame = () => {
     if (!selectedPollinator) return;
     setScore(0);
-    setTimeLeft(GAME_DURATION);
+    setTimeLeft(difficultySettings[difficulty].duration);
     setActivePowerUps([]);
     setIsTimeFrozen(false);
     setIsSlowed(false);
@@ -225,7 +232,7 @@ export const PollinatorGame = () => {
 
   const playAgain = () => {
     setScore(0);
-    setTimeLeft(GAME_DURATION);
+    setTimeLeft(difficultySettings[difficulty].duration);
     setActivePowerUps([]);
     setIsTimeFrozen(false);
     setIsSlowed(false);
@@ -272,7 +279,7 @@ export const PollinatorGame = () => {
               🌸 Pollinator Party 🐝
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Choose your pollinator and help flowers bloom! Pollinate as many flowers as you can in 30 seconds.
+              Choose your pollinator and help flowers bloom! Pollinate as many flowers as you can before time runs out.
             </p>
           </header>
 
@@ -305,6 +312,33 @@ export const PollinatorGame = () => {
                   />
                 )
               )}
+            </div>
+          </section>
+
+          {/* Difficulty selection */}
+          <section className="mb-8">
+            <h2 className="text-2xl font-display font-semibold text-center mb-6 text-foreground">
+              Select Difficulty
+            </h2>
+            <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-2xl mx-auto">
+              {(["easy", "normal", "hard"] as Difficulty[]).map((level) => {
+                const settings = difficultySettings[level];
+                return (
+                  <button
+                    key={level}
+                    onClick={() => setDifficulty(level)}
+                    className={`flex-1 p-4 rounded-2xl border-2 transition-all duration-300 ${
+                      difficulty === level
+                        ? "border-primary bg-primary/20 ring-4 ring-primary/30 scale-105"
+                        : "border-border hover:border-primary/50 bg-card/80"
+                    }`}
+                  >
+                    <span className="text-3xl block mb-2">{settings.emoji}</span>
+                    <p className="font-display font-bold text-lg">{settings.label}</p>
+                    <p className="text-sm text-muted-foreground">{settings.description}</p>
+                  </button>
+                );
+              })}
             </div>
           </section>
 
@@ -436,6 +470,7 @@ export const PollinatorGame = () => {
               isPlaying={gameState === "playing"}
               hasDoublePoints={hasDoublePoints}
               isSlowed={isSlowed}
+              obstacleRate={difficultySettings[difficulty].obstacleRate}
             />
             
             {/* Pause overlay */}

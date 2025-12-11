@@ -33,6 +33,7 @@ interface GameArenaProps {
   isPlaying: boolean;
   hasDoublePoints: boolean;
   isSlowed: boolean;
+  obstacleRate: number;
 }
 
 const colors: FlowerData["color"][] = ["coral", "lavender", "sunflower", "pink", "blue"];
@@ -67,7 +68,8 @@ export const GameArena = ({
   onObstacleHit,
   isPlaying, 
   hasDoublePoints,
-  isSlowed 
+  isSlowed,
+  obstacleRate,
 }: GameArenaProps) => {
   const [flowers, setFlowers] = useState<FlowerData[]>([]);
   const [powerUps, setPowerUps] = useState<PowerUpData[]>([]);
@@ -128,10 +130,10 @@ export const GameArena = ({
 
   // Spawn obstacles
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || obstacleRate === 0) return;
 
     const spawnObstacle = () => {
-      if (Math.random() < 0.4) { // 40% chance
+      if (Math.random() < obstacleRate) {
         setObstacles((prev) => {
           if (prev.length < 3) {
             return [...prev, generateObstacle()];
@@ -143,13 +145,13 @@ export const GameArena = ({
 
     // First obstacle after 5 seconds
     const initialTimeout = setTimeout(spawnObstacle, 5000);
-    const interval = setInterval(spawnObstacle, 4000);
+    const interval = setInterval(spawnObstacle, obstacleRate >= 0.6 ? 3000 : 4000);
 
     return () => {
       clearTimeout(initialTimeout);
       clearInterval(interval);
     };
-  }, [isPlaying]);
+  }, [isPlaying, obstacleRate]);
 
   // Auto-remove obstacles after some time
   useEffect(() => {
