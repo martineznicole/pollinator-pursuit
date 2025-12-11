@@ -300,7 +300,7 @@ export const PollinatorGame = () => {
             </div>
 
             <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 max-w-2xl mx-auto border border-destructive/30">
-              <h3 className="text-xl font-display font-semibold mb-4 text-center text-destructive">
+              <h3 className="text-xl font-display font-semibold mb-4 text-center text-white">
                 ⚠️ Obstacles - Avoid These!
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
