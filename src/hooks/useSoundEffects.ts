@@ -13,7 +13,7 @@ export const useSoundEffects = () => {
     return audioContextRef.current;
   }, []);
 
-  const playTone = useCallback((
+  const playTone = useCallback(async (
     frequency: number,
     duration: number,
     type: OscillatorType = "sine",
@@ -23,6 +23,12 @@ export const useSoundEffects = () => {
     
     try {
       const ctx = getAudioContext();
+      
+      // Resume AudioContext if it's suspended (browser autoplay policy)
+      if (ctx.state === "suspended") {
+        await ctx.resume();
+      }
+      
       const oscillator = ctx.createOscillator();
       const gainNode = ctx.createGain();
       
