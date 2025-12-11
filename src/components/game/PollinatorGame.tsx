@@ -260,7 +260,7 @@ export const PollinatorGame = () => {
           {/* Educational section */}
           <section className="mb-8">
             <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 max-w-2xl mx-auto border border-border">
-              <h3 className="text-xl font-display font-semibold mb-3 text-foreground">
+              <h3 className="text-xl font-display font-semibold mb-3 text-foreground text-center">
                 🌍 Why Pollinators Matter
               </h3>
               <p className="text-muted-foreground leading-relaxed">
